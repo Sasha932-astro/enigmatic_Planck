@@ -1,0 +1,24 @@
+# Python/venv
+.venv/
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+
+# Local Claude Code config (per-project, not for sharing)
+.claude/
+
+# Published papers (copyrighted)
+*.pdf
+
+# Temp files from nbconvert --execute
+_check.ipynb
+model_executed.ipynb
+
+# Incidental temp animation output
+animation.midframe.png
+scenarios/*/animation.midframe.png
