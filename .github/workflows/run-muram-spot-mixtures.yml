@@ -1,0 +1,42 @@
+name: Run MURaM spot class and mixture scan
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/run-muram-spot-mixtures.yml'
+      - 'experiment_muram_spot_mixtures.py'
+      - 'experiment_full_comparison.py'
+      - 'experiment_100K.py'
+      - 'model.ipynb'
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install runtime dependencies
+        run: python -m pip install --upgrade pip numpy scipy matplotlib h5py
+      - name: Run MURaM class and mixture investigation
+        run: python experiment_muram_spot_mixtures.py | tee scenarios/_muram_mixture_results.txt
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: muram-spot-class-mixtures
+          path: |
+            scenarios/_muram_classes_caseA_a.png
+            scenarios/_muram_classes_caseA_ratio.png
+            scenarios/_muram_classes_caseB_a.png
+            scenarios/_muram_classes_caseB_ratio.png
+            scenarios/_muram_mixture_pair_scan.png
+            scenarios/_muram_mixture_best_a.png
+            scenarios/_muram_mixture_best_ratio.png
+            scenarios/_muram_mixture_results.json
+            scenarios/_muram_mixture_results.txt
+            scenarios/_muram_mixture_arrays.npz
+          if-no-files-found: error
