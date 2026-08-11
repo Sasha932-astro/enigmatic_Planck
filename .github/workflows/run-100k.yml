@@ -1,0 +1,37 @@
+name: Run 100 K experiment
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/run-100k.yml'
+      - 'experiment_100K.py'
+      - 'model.ipynb'
+      - 'mps_download.py'
+      - 'mps_atlas/set1/MH0.0/teff5700/logg4.4/mpsa_intensity_spectra.dat'
+      - 'mps_atlas/set1/MH0.0/teff5800/logg4.4/mpsa_intensity_spectra.dat'
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install runtime dependencies
+        run: python -m pip install --upgrade pip numpy scipy matplotlib
+      - name: Run experiment
+        run: python experiment_100K.py | tee scenarios/_100K_results.txt
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: experiment-100K-results
+          path: |
+            scenarios/_100K_caseA.png
+            scenarios/_100K_caseB.png
+            scenarios/_100K_overlay.png
+            scenarios/_100K_results.txt
+          if-no-files-found: error
