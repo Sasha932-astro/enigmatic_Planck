@@ -1,0 +1,46 @@
+name: Run final MPS overlay and HS2EE6 sunspot experiment
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/run-final-sunspot-comparison.yml'
+      - 'experiment_final_sunspot_comparison.py'
+      - 'experiment_muram_spot_mixtures.py'
+      - 'experiment_full_comparison.py'
+      - 'experiment_100K.py'
+      - 'model.ipynb'
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install runtime dependencies
+        run: python -m pip install --upgrade pip numpy scipy matplotlib h5py
+      - name: Run final real-spectra comparison
+        run: python experiment_final_sunspot_comparison.py | tee scenarios/_final_sunspot_comparison_results.txt
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-mps-overlay-hs2ee6
+          path: |
+            scenarios/_with100K_classes_caseA_a.png
+            scenarios/_with100K_classes_caseA_ratio.png
+            scenarios/_with100K_classes_caseB_a.png
+            scenarios/_with100K_classes_caseB_ratio.png
+            scenarios/_with100K_mixture_pair_scan.png
+            scenarios/_with100K_mixture_best_a.png
+            scenarios/_with100K_mixture_best_ratio.png
+            scenarios/_hs2ee6_gspot_components_a.png
+            scenarios/_hs2ee6_gspot_components_ratio.png
+            scenarios/_hs2ee6_gspot_fraction_scan.png
+            scenarios/_hs2ee6_gspot_arrays.npz
+            scenarios/_final_sunspot_comparison_results.json
+            scenarios/_final_sunspot_comparison_results.txt
+          if-no-files-found: error
