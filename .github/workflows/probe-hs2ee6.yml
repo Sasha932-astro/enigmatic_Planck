@@ -1,0 +1,63 @@
+name: Probe HS2EE6 sunspot spectra dataset
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/probe-hs2ee6.yml'
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Query Edmond dataset
+        run: |
+          python - <<'PY'
+          import json, urllib.parse, urllib.request, pathlib
+          pid='doi:10.17617/3.HS2EE6'
+          url='https://edmond.mpg.de/api/datasets/:persistentId/?persistentId=' + urllib.parse.quote(pid, safe='')
+          print('GET', url)
+          with urllib.request.urlopen(url, timeout=60) as r:
+              payload=json.load(r)
+          pathlib.Path('hs2ee6_metadata.json').write_text(json.dumps(payload, indent=2))
+          v=payload['data']['latestVersion']
+          print('dataset:',v.get('datasetPersistentId'))
+          print('version:',v.get('versionNumber'),v.get('versionMinorNumber'))
+          print('files:',len(v.get('files',[])))
+          for e in v.get('files',[]):
+              d=e.get('dataFile',{})
+              print('\t'.join([str(d.get('id','')),str(d.get('filename','')),str(d.get('filesize','')),str(d.get('contentType','')),str(e.get('directoryLabel',''))]))
+          # Download small text/code files automatically for inspection.
+          for e in v.get('files',[]):
+              d=e.get('dataFile',{})
+              fn=str(d.get('filename',''))
+              size=int(d.get('filesize',0) or 0)
+              ctype=str(d.get('contentType',''))
+              if size <= 200000 and (ctype.startswith('text/') or fn.lower().endswith(('.md','.txt','.py','.ipynb','.json','.csv'))):
+                  fid=d['id']
+                  print('downloading small metadata/helper:',fn,fid)
+                  urllib.request.urlretrieve(f'https://edmond.mpg.de/api/access/datafile/{fid}', fn)
+                  try:
+                      print(f'===== {fn} =====')
+                      print(pathlib.Path(fn).read_text(errors='replace')[:30000])
+                  except Exception as exc:
+                      print('cannot print',fn,exc)
+          PY
+      - name: Upload probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: hs2ee6-probe
+          path: |
+            hs2ee6_metadata.json
+            *.md
+            *.txt
+            *.py
+            *.ipynb
+            *.json
+            *.csv
+          if-no-files-found: warn
