@@ -1,0 +1,15 @@
+quiet Sun = MPS-ATLAS 5800 K, feature = 5700 K (100 K cooler)
+
+Case A  rotating across the disk
+          distance from Planck(5780 K) = 0.112
+          best-fit Planck T = 5614 K   mean SSI-TSI correlation = +0.9984
+
+Case B  emerging at disk centre (no rotation)
+          distance from Planck(5780 K) = 0.123
+          best-fit Planck T = 5648 K   mean SSI-TSI correlation = +1.0000
+
+Both cases miss the Planck(5780) curve by the same amount:
+geometry is not the cause - the mismatch lives in the spectra.
+
+Source spectra: MPS-ATLAS, DOI 10.17617/3.NJ56TR, set1, [M/H]=0.0, logg=4.4,
+Teff=5800 K and 5700 K.
