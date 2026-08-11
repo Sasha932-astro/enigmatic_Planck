@@ -1,0 +1,53 @@
+name: Probe MURaM Edmond dataset
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/probe-muram.yml'
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Query Edmond Dataverse API
+        run: |
+          python - <<'PY'
+          import json
+          import urllib.parse
+          import urllib.request
+
+          pid = 'doi:10.17617/3.FBTIYY'
+          url = 'https://edmond.mpg.de/api/datasets/:persistentId/?persistentId=' + urllib.parse.quote(pid, safe='')
+          print('GET', url)
+          with urllib.request.urlopen(url, timeout=60) as r:
+              payload = json.load(r)
+          with open('muram_dataset_metadata.json', 'w') as f:
+              json.dump(payload, f, indent=2)
+
+          version = payload['data']['latestVersion']
+          print('dataset:', version.get('datasetPersistentId'))
+          print('version:', version.get('versionNumber'), version.get('versionMinorNumber'))
+          files = version.get('files', [])
+          print('files:', len(files))
+          for entry in files:
+              df = entry.get('dataFile', {})
+              print('\t'.join([
+                  str(df.get('id', '')),
+                  str(df.get('filename', '')),
+                  str(df.get('filesize', '')),
+                  str(entry.get('directoryLabel', '')),
+                  str(df.get('contentType', '')),
+              ]))
+          PY
+      - name: Upload metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: muram-dataset-metadata
+          path: muram_dataset_metadata.json
+          if-no-files-found: error
