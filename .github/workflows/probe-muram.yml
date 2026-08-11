@@ -15,17 +15,20 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Query Edmond Dataverse API
+      - name: Install HDF5 reader
+        run: python -m pip install h5py numpy
+      - name: Query and inspect MURaM spectral library
         run: |
           python - <<'PY'
           import json
           import urllib.parse
           import urllib.request
+          import h5py
+          import numpy as np
 
           pid = 'doi:10.17617/3.FBTIYY'
-          url = 'https://edmond.mpg.de/api/datasets/:persistentId/?persistentId=' + urllib.parse.quote(pid, safe='')
-          print('GET', url)
-          with urllib.request.urlopen(url, timeout=60) as r:
+          meta_url = 'https://edmond.mpg.de/api/datasets/:persistentId/?persistentId=' + urllib.parse.quote(pid, safe='')
+          with urllib.request.urlopen(meta_url, timeout=60) as r:
               payload = json.load(r)
           with open('muram_dataset_metadata.json', 'w') as f:
               json.dump(payload, f, indent=2)
@@ -37,17 +40,45 @@ jobs:
           print('files:', len(files))
           for entry in files:
               df = entry.get('dataFile', {})
-              print('\t'.join([
-                  str(df.get('id', '')),
-                  str(df.get('filename', '')),
-                  str(df.get('filesize', '')),
-                  str(entry.get('directoryLabel', '')),
-                  str(df.get('contentType', '')),
-              ]))
+              print('\t'.join([str(df.get('id','')), str(df.get('filename','')), str(df.get('filesize','')), str(df.get('contentType',''))]))
+
+          ids = {'README.md': 344942, 'read_spectra.py': 344888,
+                 'G2_MH_00.h5': 344883, 'K0_MH_00.h5': 344889}
+          for name, fid in ids.items():
+              url = f'https://edmond.mpg.de/api/access/datafile/{fid}'
+              urllib.request.urlretrieve(url, name)
+
+          print('\n===== README.md =====')
+          print(open('README.md').read())
+          print('\n===== read_spectra.py =====')
+          print(open('read_spectra.py').read())
+
+          def walk(name, obj):
+              if isinstance(obj, h5py.Dataset):
+                  arr = obj[()]
+                  print(f'DATASET {name}: shape={obj.shape} dtype={obj.dtype}')
+                  if np.size(arr):
+                      flat = np.asarray(arr).reshape(-1)
+                      print('  sample:', flat[:min(8, flat.size)])
+              else:
+                  print(f'GROUP {name}')
+              if obj.attrs:
+                  print('  attrs:', {k: obj.attrs[k] for k in obj.attrs})
+
+          for fn in ('G2_MH_00.h5','K0_MH_00.h5'):
+              print(f'\n===== {fn} =====')
+              with h5py.File(fn, 'r') as h:
+                  print('root attrs:', {k:h.attrs[k] for k in h.attrs})
+                  h.visititems(walk)
           PY
-      - name: Upload metadata
+      - name: Upload probe files
         uses: actions/upload-artifact@v4
         with:
-          name: muram-dataset-metadata
-          path: muram_dataset_metadata.json
+          name: muram-dataset-probe
+          path: |
+            muram_dataset_metadata.json
+            README.md
+            read_spectra.py
+            G2_MH_00.h5
+            K0_MH_00.h5
           if-no-files-found: error
