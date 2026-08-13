@@ -23,6 +23,8 @@ jobs:
           cache: pip
       - name: Install runtime dependencies
         run: python -m pip install --upgrade pip numpy scipy matplotlib
+      - name: Fetch atmosphere models
+        run: python mps_download.py --teff 5700 5800 --kind model
       - name: Run experiment
         run: python experiment_100K.py | tee scenarios/_100K_results.txt
       - name: Upload results
@@ -34,4 +36,6 @@ jobs:
             scenarios/_100K_caseB.png
             scenarios/_100K_overlay.png
             scenarios/_100K_results.txt
+            mps_atlas/set1/MH0.0/teff5700/logg4.4/mpsa_model_atmosphere.dat
+            mps_atlas/set1/MH0.0/teff5800/logg4.4/mpsa_model_atmosphere.dat
           if-no-files-found: error
