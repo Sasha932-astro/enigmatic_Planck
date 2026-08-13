@@ -1,0 +1,19 @@
+name: Brightness temperature grid
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/run-brightness-grid.yml']
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install numpy matplotlib
+      - run: python brightness_grid_tmp.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brightness-temperature-grid
+          path: scenarios/_brightness_temperature_grid_5000_5800.*
