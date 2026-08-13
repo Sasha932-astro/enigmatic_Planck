@@ -8,12 +8,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - run: pip install numpy matplotlib
-      - run: python brightness_grid_tmp.py
+      - name: Extract wavelength and mu=1 intensity
+        run: |
+          mkdir -p brightness_grid
+          awk '$1>=600 && $1<=3000 {print $1, $2}' mps_atlas/set1/MH0.0/teff5800/logg4.4/mpsa_intensity_spectra.dat > brightness_grid/5800.txt
+          awk '$1>=600 && $1<=3000 {print $1, $2}' mps_atlas/set1/MH0.0/teff5600/logg4.4/mpsa_intensity_spectra.dat > brightness_grid/5600.txt
+          awk '$1>=600 && $1<=3000 {print $1, $2}' mps_atlas/set1/MH0.0/teff5400/logg4.4/mpsa_intensity_spectra.dat > brightness_grid/5400.txt
+          awk '$1>=600 && $1<=3000 {print $1, $2}' mps_atlas/set1/MH0.0/teff5200/logg4.4/mpsa_intensity_spectra.dat > brightness_grid/5200.txt
+          awk '$1>=600 && $1<=3000 {print $1, $2}' mps_atlas/set1/MH0.0/teff5000/logg4.4/mpsa_intensity_spectra.dat > brightness_grid/5000.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: brightness-temperature-grid
-          path: scenarios/_brightness_temperature_grid_5000_5800.*
+          name: brightness-temperature-inputs
+          path: brightness_grid/*.txt
