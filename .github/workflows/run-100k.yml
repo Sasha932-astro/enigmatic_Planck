@@ -5,9 +5,6 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/run-100k.yml'
-      - 'experiment_100K.py'
-      - 'model.ipynb'
-      - 'mps_download.py'
   workflow_dispatch:
 
 jobs:
@@ -18,32 +15,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: pip
-      - name: Install runtime dependencies
-        run: python -m pip install --upgrade pip numpy scipy matplotlib
-      - name: Run standard 5800 to 5700 K experiment
-        run: python experiment_100K.py | tee scenarios/_100K_results.txt
-      - name: Run extended 4700 to 4600 K experiment
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('experiment_100K.py')
-          s = p.read_text()
-          s = s.replace('T_QS, T_FEATURE = 5800, 5700', 'T_QS, T_FEATURE = 4700, 4600')
-          s = s.replace('T_PLANCK = 5780.0', 'T_PLANCK = 4700.0')
-          s = s.replace('LO, HI = 400.0, 1600.0', 'LO, HI = 400.0, 160000.0')
-          s = s.replace('OUT / f"_100K_case{tag}.png"', 'OUT / f"_100K_4700_ext_case{tag}.png"')
-          s = s.replace('OUT / "_100K_overlay.png"', 'OUT / "_100K_4700_ext_ratio_full.png"')
-          old = '''ax.set(xlabel="Wavelength (nm)", ylabel="a(λ) / Planck(5780 K)", ylim=(0.6, 1.4),
-           title="Does geometry cause the deviation from Planck(5780 K)?  No.")'''
-          new = '''ax.set_xscale("log")
-    ax.set(xlabel="Wavelength (nm)", ylabel="a(λ) / Planck(4700 K)", ylim=(0.0, 1.6),
-           title="MPS-ATLAS 4700→4600 K: ratio to Planck 4700 K, full wavelength range")'''
-          s = s.replace(old, new)
-          Path('/tmp/experiment_100K_4700_extended.py').write_text(s)
-          PY
-          python /tmp/experiment_100K_4700_extended.py | tee scenarios/_100K_4700_ext_results.txt
+      - name: Install dependencies
+        run: python -m pip install numpy scipy matplotlib
+      - name: Prepare extended experiment
+        run: python -c "from pathlib import Path; s=Path('experiment_100K.py').read_text(); s=s.replace('T_QS, T_FEATURE = 5800, 5700','T_QS, T_FEATURE = 4700, 4600').replace('T_PLANCK = 5780.0','T_PLANCK = 4700.0').replace('LO, HI = 400.0, 1600.0','LO, HI = 400.0, 160000.0').replace('_100K_case','_100K_4700_ext_case').replace('_100K_overlay.png','_100K_4700_ext_ratio_full.png').replace('Planck(5780 K)','Planck(4700 K)').replace('ylim=(0.6, 1.4)','ylim=(0.0, 1.6)').replace('fig, ax = plt.subplots(figsize=(10, 6))','fig, ax = plt.subplots(figsize=(10, 6))\\n    ax.set_xscale(\\\"log\\\")'); Path('experiment_100K_4700_ext.py').write_text(s)"
+      - name: Run extended experiment
+        run: python experiment_100K_4700_ext.py | tee scenarios/_100K_4700_ext_results.txt
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
