@@ -8,8 +8,6 @@ on:
       - 'experiment_100K.py'
       - 'model.ipynb'
       - 'mps_download.py'
-      - 'mps_atlas/set1/MH0.0/teff4600/logg4.4/mpsa_intensity_spectra.dat'
-      - 'mps_atlas/set1/MH0.0/teff4700/logg4.4/mpsa_intensity_spectra.dat'
       - 'mps_atlas/set1/MH0.0/teff5700/logg4.4/mpsa_intensity_spectra.dat'
       - 'mps_atlas/set1/MH0.0/teff5800/logg4.4/mpsa_intensity_spectra.dat'
   workflow_dispatch:
@@ -25,28 +23,19 @@ jobs:
           cache: pip
       - name: Install runtime dependencies
         run: python -m pip install --upgrade pip numpy scipy matplotlib
-      - name: Run standard 5800 to 5700 K experiment
+      - name: Fetch atmosphere models
+        run: python mps_download.py --teff 5700 5800 --kind model
+      - name: Run experiment
         run: python experiment_100K.py | tee scenarios/_100K_results.txt
-      - name: Run 4700 to 4600 K experiment
-        shell: bash
-        run: |
-          python - <<'PY' | tee scenarios/_100K_4700_results.txt
-          import experiment_100K as e
-          e.T_QS = 4700
-          e.T_FEATURE = 4600
-          e.T_PLANCK = 4700.0
-          e.main()
-          PY
-          mv scenarios/_100K_caseA.png scenarios/_100K_4700_caseA.png
-          mv scenarios/_100K_caseB.png scenarios/_100K_4700_caseB.png
-          mv scenarios/_100K_overlay.png scenarios/_100K_4700_overlay.png
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
-          name: experiment-100K-4700-results
+          name: experiment-100K-results
           path: |
-            scenarios/_100K_4700_caseA.png
-            scenarios/_100K_4700_caseB.png
-            scenarios/_100K_4700_overlay.png
-            scenarios/_100K_4700_results.txt
+            scenarios/_100K_caseA.png
+            scenarios/_100K_caseB.png
+            scenarios/_100K_overlay.png
+            scenarios/_100K_results.txt
+            mps_atlas/set1/MH0.0/teff5700/logg4.4/mpsa_model_atmosphere.dat
+            mps_atlas/set1/MH0.0/teff5800/logg4.4/mpsa_model_atmosphere.dat
           if-no-files-found: error
