@@ -1,0 +1,35 @@
+name: Run brightness temperature experiment
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/run-brightness-temperature.yml'
+      - 'experiment_brightness_temperature.py'
+      - 'mps_atlas/set1/MH0.0/teff5700/logg4.4/mpsa_intensity_spectra.dat'
+      - 'mps_atlas/set1/MH0.0/teff5800/logg4.4/mpsa_intensity_spectra.dat'
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip numpy matplotlib
+      - name: Run experiment
+        run: python experiment_brightness_temperature.py | tee scenarios/_brightness_temperature_results.txt
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightness-temperature-5700-5800
+          path: |
+            scenarios/_brightness_temperature_5700_5800.png
+            scenarios/_brightness_temperature_delta_5700_5800.png
+            scenarios/_brightness_temperature_5700_5800.npz
+            scenarios/_brightness_temperature_results.txt
+          if-no-files-found: error
