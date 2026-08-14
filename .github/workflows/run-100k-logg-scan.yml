@@ -1,0 +1,33 @@
+name: 100 K MPS-ATLAS logg scan
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'experiment_100K_logg_scan.py'
+      - '.github/workflows/run-100k-logg-scan.yml'
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install numpy scipy matplotlib
+      - name: Run gravity scan
+        run: python experiment_100K_logg_scan.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: experiment-100K-logg-scan
+          path: |
+            scenarios/_100K_logg_scan_caseA_ratio.png
+            scenarios/_100K_logg_scan_caseB_ratio.png
+            scenarios/_100K_logg_scan_rms.png
+            scenarios/_100K_logg_scan_results.json
+            scenarios/_100K_logg_scan_results.csv
+            scenarios/_100K_logg_scan_samples.json
